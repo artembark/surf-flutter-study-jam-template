@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:map_launcher/map_launcher.dart';
+import 'package:surf_practice_chat_flutter/features/chat/models/chat_geolocation_geolocation_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_image_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.dart';
@@ -50,7 +51,10 @@ class _ChatScreenState extends State<ChatScreen> {
               messages: _currentMessages,
             ),
           ),
-          _ChatTextField(onSendPressed: _onSendPressed),
+          _ChatTextField(
+            onMessageSendPressed: _onSendPressed,
+            onSendLocationPressed: _onSendLocationPressed,
+          ),
         ],
       ),
     );
@@ -65,6 +69,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _onSendPressed(String messageText) async {
     final messages = await widget.chatRepository.sendMessage(messageText);
+    setState(() {
+      _currentMessages = messages;
+    });
+  }
+
+  Future<void> _onSendLocationPressed(String messageText) async {
+    final messages = await widget.chatRepository.sendGeolocationMessage(
+        message: messageText,
+        location: ChatGeolocationDto(latitude: 59.59, longitude: 30.30));
     setState(() {
       _currentMessages = messages;
     });
@@ -91,12 +104,14 @@ class _ChatBody extends StatelessWidget {
 }
 
 class _ChatTextField extends StatelessWidget {
-  final ValueChanged<String> onSendPressed;
+  final ValueChanged<String> onMessageSendPressed;
+  final ValueChanged<String> onSendLocationPressed;
 
   final _textEditingController = TextEditingController();
 
   _ChatTextField({
-    required this.onSendPressed,
+    required this.onMessageSendPressed,
+    required this.onSendLocationPressed,
     Key? key,
   }) : super(key: key);
 
@@ -115,6 +130,10 @@ class _ChatTextField extends StatelessWidget {
         ),
         child: Row(
           children: [
+            IconButton(
+                onPressed: () =>
+                    onSendLocationPressed(_textEditingController.text),
+                icon: const Icon(Icons.location_on_outlined)),
             Expanded(
               child: TextField(
                 controller: _textEditingController,
@@ -124,7 +143,8 @@ class _ChatTextField extends StatelessWidget {
               ),
             ),
             IconButton(
-              onPressed: () => onSendPressed(_textEditingController.text),
+              onPressed: () =>
+                  onMessageSendPressed(_textEditingController.text),
               icon: const Icon(Icons.send),
               color: colorScheme.onSurface,
             ),
@@ -183,7 +203,7 @@ class _ChatMessage extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ChatAvatar(userData: chatData.chatUserDto),
+            //_ChatAvatar(userData: chatData.chatUserDto),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -263,12 +283,6 @@ class UserMessageImages extends StatelessWidget {
         itemBuilder: (BuildContext ctx, index) {
           return Image.network(chatData.imageUrl![index]);
         });
-
-    // return Column(
-    //   children: chatData.imageUrl!
-    //       .map((imageUrl) => Image.network(imageUrl))
-    //       .toList(),
-    // );
   }
 }
 
