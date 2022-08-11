@@ -168,7 +168,9 @@ class _ChatMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Material(
-      color: chatData.chatUserDto is ChatUserLocalDto ? colorScheme.primary.withOpacity(.1) : null,
+      color: chatData.chatUserDto is ChatUserLocalDto
+          ? colorScheme.primary.withOpacity(.1)
+          : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 18,
@@ -217,7 +219,7 @@ class _ChatAvatar extends StatelessWidget {
       width: _size,
       height: _size,
       child: Material(
-        color: colorScheme.primary,
+        color: Color(0xff000000 | userData.name.hashCode),
         shape: const CircleBorder(),
         child: Center(
           child: Text(

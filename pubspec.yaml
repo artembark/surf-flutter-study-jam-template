@@ -6,13 +6,19 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  surf_study_jam: ^0.1.0
-  cupertino_icons: ^1.0.2
+  surf_study_jam: ^0.1.0+1
+  cupertino_icons: ^1.0.5
+
+  equatable: ^2.0.3
+  bloc: ^8.1.0
+  flutter_bloc: ^8.0.1
+  shared_preferences: ^2.0.15
+  get_it: ^7.2.0
 
 dev_dependencies:
   flutter_test:
