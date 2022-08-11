@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:map_launcher/map_launcher.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_dto.dart';
+import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_image_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
+
+import '../models/chat_message_location_dto.dart';
 
 /// Main screen of chat app, containing messages.
 class ChatScreen extends StatefulWidget {
@@ -78,9 +83,9 @@ class _ChatBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: messages.length,
-      itemBuilder: (_, index) => _ChatMessage(
-        chatData: messages.elementAt(index),
-      ),
+      itemBuilder: (_, index) {
+        return _ChatMessage(chatData: messages.elementAt(index));
+      },
     );
   }
 }
@@ -168,9 +173,8 @@ class _ChatMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Material(
-      color: chatData.chatUserDto is ChatUserLocalDto
-          ? colorScheme.primary.withOpacity(.1)
-          : null,
+      color:
+          chatData.chatUserDto is ChatUserLocalDto ? colorScheme.primary : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 18,
@@ -191,6 +195,17 @@ class _ChatMessage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(chatData.message ?? ''),
+                  if (chatData is ChatMessageGeolocationDto)
+                    UserGeolocationButton(
+                        chatData: chatData as ChatMessageGeolocationDto),
+                  if (chatData is ChatMessageImageDto)
+                    UserMessageImages(
+                        chatData: chatData as ChatMessageImageDto),
+                  Text(
+                    DateFormat("HH:mm").format(
+                      chatData.createdDateTime.toLocal(),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -198,6 +213,62 @@ class _ChatMessage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class UserGeolocationButton extends StatelessWidget {
+  const UserGeolocationButton({
+    Key? key,
+    required this.chatData,
+  }) : super(key: key);
+
+  final ChatMessageGeolocationDto chatData;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      icon: const Icon(Icons.location_on_outlined),
+      onPressed: () async {
+        final availableMaps = await MapLauncher.installedMaps;
+        await availableMaps.first.showMarker(
+          coords:
+              Coords(chatData.location.latitude, chatData.location.longitude),
+          title: '${chatData.chatUserDto.name ?? 'Пользователь без имени'} тут',
+        );
+      },
+      label: const Text('Открыть геолокацию на карте'),
+    );
+  }
+}
+
+class UserMessageImages extends StatelessWidget {
+  const UserMessageImages({
+    Key? key,
+    required this.chatData,
+  }) : super(key: key);
+
+  final ChatMessageImageDto chatData;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 200,
+            childAspectRatio: 3 / 2,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20),
+        itemCount: chatData.imageUrl?.length,
+        itemBuilder: (BuildContext ctx, index) {
+          return Image.network(chatData.imageUrl![index]);
+        });
+
+    // return Column(
+    //   children: chatData.imageUrl!
+    //       .map((imageUrl) => Image.network(imageUrl))
+    //       .toList(),
+    // );
   }
 }
 

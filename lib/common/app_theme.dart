@@ -18,14 +18,14 @@ abstract class AppTheme {
 MaterialColor greenCustom = MaterialColor(0xFF006E17, greenColor);
 
 Map<int, Color> greenColor = {
-  50: Color.fromRGBO(0, 110, 23, .1),
-  100: Color.fromRGBO(0, 110, 23, .2),
-  200: Color.fromRGBO(0, 110, 23, .3),
-  300: Color.fromRGBO(0, 110, 23, .4),
-  400: Color.fromRGBO(0, 110, 23, .5),
-  500: Color.fromRGBO(0, 110, 23, .6),
-  600: Color.fromRGBO(0, 110, 23, .7),
-  700: Color.fromRGBO(0, 110, 23, .8),
-  800: Color.fromRGBO(0, 110, 23, .9),
-  900: Color.fromRGBO(0, 110, 23, 1),
+  50: const Color.fromRGBO(0, 110, 23, 0.1),
+  100: const Color.fromRGBO(0, 110, 23, 0.2),
+  200: const Color.fromRGBO(0, 110, 23, 0.3),
+  300: const Color.fromRGBO(0, 110, 23, 0.4),
+  400: const Color.fromRGBO(0, 110, 23, 0.5),
+  500: const Color.fromRGBO(0, 110, 23, 0.6),
+  600: const Color.fromRGBO(0, 110, 23, 0.7),
+  700: const Color.fromRGBO(0, 110, 23, 0.8),
+  800: const Color.fromRGBO(0, 110, 23, 0.9),
+  900: const Color.fromRGBO(0, 110, 23, 1),
 };

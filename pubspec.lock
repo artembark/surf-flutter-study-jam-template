@@ -142,6 +142,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.0.1"
+  intl:
+    dependency: "direct main"
+    description:
+      name: intl
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.17.0"
   js:
     dependency: transitive
     description:
@@ -163,6 +170,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.2"
+  map_launcher:
+    dependency: "direct main"
+    description:
+      name: map_launcher
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.3.0+1"
   matcher:
     dependency: transitive
     description:
