@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 
 part 'app_settings_state.dart';
 
@@ -8,29 +9,29 @@ part 'app_settings_state.dart';
 class AppSettingsCubit extends Cubit<AppSettingsState> {
   //объект доступа к хранилищу sharedPreferences передается зависимостью
   final SharedPreferences sharedPreferences;
-
+  final String tokenKey = 'token';
   //конструктор с обязательным именованым параметром объекта доступа к хранилищу
   AppSettingsCubit({required this.sharedPreferences})
       : super(const AppSettingsState());
 
   //метод сохранения токена в хранилище
-  Future<void> saveToken(String token) async {
+  Future<void> saveToken(TokenDto tokenDto) async {
     //записываем в случае смены названия
-    if (token != state.token) {
+    if (tokenDto != state.tokenDto) {
       //запись токена по ключу в хранилище, асинхронная
-      await sharedPreferences.setString('token', token);
+      await sharedPreferences.setString(tokenKey, tokenDto.toString());
       //выбрасывание обновленного состояние с новым токеном
-      emit(AppSettingsState(token: token));
+      emit(AppSettingsState(tokenDto: tokenDto));
     }
   }
 
   //метод получения сохраненного токена из хранилища
   String getToken() {
-    //чтение названия города из хранилища по ключу
+    //чтение токена из хранилища по ключу
     //в случае отсутствия ключа считывается пустая строка
-    final String token = sharedPreferences.getString('token') ?? '';
+    final String token = sharedPreferences.getString(tokenKey) ?? '';
     //выбрасывание обновленного состояние с полученным названием токена
-    emit(AppSettingsState(token: token));
+    emit(AppSettingsState(tokenDto: TokenDto(token: token)));
     //возвращаемое значение
     return token;
   }

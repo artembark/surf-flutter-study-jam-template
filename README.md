@@ -2,6 +2,7 @@
 цвета
 intl для даты
 
+geolocator настроен в android ios
 
 
 <p align="center">

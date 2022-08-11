@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:map_launcher/map_launcher.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_geolocation_geolocation_dto.dart';
@@ -7,6 +8,7 @@ import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_ima
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
+import 'package:surf_practice_chat_flutter/features/location/blocs/location_cubit.dart';
 
 import '../models/chat_message_location_dto.dart';
 
@@ -54,6 +56,8 @@ class _ChatScreenState extends State<ChatScreen> {
           _ChatTextField(
             onMessageSendPressed: _onSendPressed,
             onSendLocationPressed: _onSendLocationPressed,
+            onSendImagePressed: _onSendImagePressed,
+            onGetLocationPressed: _onGetLocationPressed,
           ),
         ],
       ),
@@ -75,9 +79,32 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _onSendLocationPressed(String messageText) async {
-    final messages = await widget.chatRepository.sendGeolocationMessage(
+    print('onsend');
+    final latitude = context.read<LocationCubit>().state.position?.latitude;
+    final longitude = context.read<LocationCubit>().state.position?.longitude;
+    if (latitude != null && longitude != null) {
+      final location =
+          ChatGeolocationDto(latitude: latitude, longitude: longitude);
+      final messages = await widget.chatRepository
+          .sendGeolocationMessage(message: messageText, location: location);
+
+      setState(() {
+        _currentMessages = messages;
+      });
+      if (!mounted) return;
+      context.read<LocationCubit>().resetPosition();
+    }
+  }
+
+  void _onGetLocationPressed() async {
+    print('pressed');
+    context.read<LocationCubit>().getCurrentPosition();
+  }
+
+  Future<void> _onSendImagePressed(String messageText) async {
+    final messages = await widget.chatRepository.sendImageMessage(
         message: messageText,
-        location: ChatGeolocationDto(latitude: 59.59, longitude: 30.30));
+        images: ['https://docs.flutter.dev/assets/images/dash/Dash.png']);
     setState(() {
       _currentMessages = messages;
     });
@@ -106,12 +133,16 @@ class _ChatBody extends StatelessWidget {
 class _ChatTextField extends StatelessWidget {
   final ValueChanged<String> onMessageSendPressed;
   final ValueChanged<String> onSendLocationPressed;
+  final ValueChanged<String> onSendImagePressed;
+  final VoidCallback onGetLocationPressed;
 
   final _textEditingController = TextEditingController();
 
   _ChatTextField({
     required this.onMessageSendPressed,
     required this.onSendLocationPressed,
+    required this.onSendImagePressed,
+    required this.onGetLocationPressed,
     Key? key,
   }) : super(key: key);
 
@@ -120,37 +151,81 @@ class _ChatTextField extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Material(
-      color: colorScheme.surface,
-      elevation: 12,
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: mediaQuery.padding.bottom + 8,
-          left: 16,
-        ),
-        child: Row(
-          children: [
-            IconButton(
-                onPressed: () =>
-                    onSendLocationPressed(_textEditingController.text),
-                icon: const Icon(Icons.location_on_outlined)),
-            Expanded(
-              child: TextField(
-                controller: _textEditingController,
-                decoration: const InputDecoration(
-                  hintText: 'Сообщение',
+    return BlocBuilder<LocationCubit, LocationState>(
+      builder: (context, state) {
+        return Material(
+          color: colorScheme.surface,
+          elevation: 12,
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: mediaQuery.padding.bottom + 8,
+              right: 16,
+              left: 16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.position != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Container(
+                      color: Colors.amberAccent,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () =>
+                                context.read<LocationCubit>().resetPosition(),
+                            label: const Text('Отменить'),
+                            icon: const Icon(Icons.location_on),
+                          ),
+                          const Text('Прикреплена геолокация'),
+                        ],
+                      ),
+                    ),
+                  ),
+                Row(
+                  children: [
+                    IconButton(
+                        onPressed: () =>
+                            onSendImagePressed(_textEditingController.text),
+                        icon: const Icon(Icons.image)),
+                    IconButton(
+                        onPressed: () => onGetLocationPressed(),
+                        icon: const Icon(Icons.location_on_outlined)),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: _textEditingController,
+                            decoration: const InputDecoration(
+                              hintText: 'Сообщение',
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        if (state.position != null) {
+                          onSendLocationPressed(_textEditingController.text);
+                        } else {
+                          onMessageSendPressed(_textEditingController.text);
+                        }
+                      },
+                      icon: const Icon(Icons.send),
+                      color: colorScheme.onSurface,
+                    ),
+                  ],
                 ),
-              ),
+              ],
             ),
-            IconButton(
-              onPressed: () =>
-                  onMessageSendPressed(_textEditingController.text),
-              icon: const Icon(Icons.send),
-              color: colorScheme.onSurface,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -281,6 +356,7 @@ class UserMessageImages extends StatelessWidget {
             mainAxisSpacing: 20),
         itemCount: chatData.imageUrl?.length,
         itemBuilder: (BuildContext ctx, index) {
+          print(chatData.imageUrl![index]);
           return Image.network(chatData.imageUrl![index]);
         });
   }

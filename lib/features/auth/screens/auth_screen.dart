@@ -5,9 +5,8 @@ import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
+import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
 import 'package:surf_study_jam/surf_study_jam.dart';
-
-import '../../auth/blocs/app_settings/app_settings_cubit.dart';
 
 /// Screen for authorization process.
 ///
@@ -29,6 +28,13 @@ class _AuthScreenState extends State<AuthScreen> {
 
   //текст ошибки поля для ввода
   String errorText = '';
+
+  @override
+  void initState() {
+    loginController.text = 'artembark';
+    passController.text = 'hpE0xR7aDItA';
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
