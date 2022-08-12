@@ -93,7 +93,7 @@ class _ChatAppBar extends StatelessWidget {
         onPressed: () {
           context.read<AuthCubit>().logOut();
           context.read<AppSettingsCubit>().resetToken();
-          Navigator.pop(context);
+          Navigator.pushNamed(context, AppConst.loginRoute);
         },
       ),
       actions: [
