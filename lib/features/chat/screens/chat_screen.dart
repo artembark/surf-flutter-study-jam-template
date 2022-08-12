@@ -75,7 +75,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
       floatingActionButton: FloatingActionButton.small(
         onPressed: _scrollDown,
         child: Icon(Icons.arrow_downward),
@@ -161,7 +161,7 @@ class _ChatBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      reverse: true,
+      //reverse: true,
       controller: controller,
       itemCount: messages.length,
       itemBuilder: (_, index) {
