@@ -1,13 +1,17 @@
+import 'package:bubble/bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:map_launcher/map_launcher.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_geolocation_geolocation_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_image_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
+import 'package:surf_practice_chat_flutter/features/image_upload/blocs/image_upload_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/location/blocs/location_cubit.dart';
 
 import '../models/chat_message_location_dto.dart';
@@ -29,8 +33,16 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _nameEditingController = TextEditingController();
-
+  final ScrollController _controller = ScrollController();
   Iterable<ChatMessageDto> _currentMessages = [];
+
+  void _scrollDown() {
+    _controller.animateTo(
+      _controller.position.maxScrollExtent,
+      duration: const Duration(seconds: 1),
+      curve: Curves.fastOutSlowIn,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,16 +62,23 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: _ChatBody(
+              controller: _controller,
               messages: _currentMessages,
             ),
           ),
           _ChatTextField(
             onMessageSendPressed: _onSendPressed,
-            onSendLocationPressed: _onSendLocationPressed,
-            onSendImagePressed: _onSendImagePressed,
             onGetLocationPressed: _onGetLocationPressed,
+            onSendLocationPressed: _onSendLocationPressed,
+            onPickImagePressed: _onPickImagePressed,
+            onSendImagePressed: _onSendImagePressed,
           ),
         ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: _scrollDown,
+        child: Icon(Icons.arrow_downward),
       ),
     );
   }
@@ -79,7 +98,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _onSendLocationPressed(String messageText) async {
-    print('onsend');
     final latitude = context.read<LocationCubit>().state.position?.latitude;
     final longitude = context.read<LocationCubit>().state.position?.longitude;
     if (latitude != null && longitude != null) {
@@ -97,31 +115,54 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _onGetLocationPressed() async {
-    print('pressed');
     context.read<LocationCubit>().getCurrentPosition();
   }
 
+  Future<void> _onPickImagePressed() async {
+    final ImagePicker picker = ImagePicker();
+    final List<XFile>? images = await picker.pickMultiImage();
+    if (images != null) {
+      if (!mounted) return;
+      context.read<ImageUploadCubit>().uploadImage(images);
+    }
+  }
+
   Future<void> _onSendImagePressed(String messageText) async {
-    final messages = await widget.chatRepository.sendImageMessage(
-        message: messageText,
-        images: ['https://docs.flutter.dev/assets/images/dash/Dash.png']);
-    setState(() {
-      _currentMessages = messages;
-    });
+    final List<String>? urlList =
+        context.read<ImageUploadCubit>().state.imageUrl;
+    // if (urlList != null) {
+    //   print(urlList);
+    //   urlList.forEach((element) {
+    //     print(element);
+    //   });
+    //   print(messageText);
+    if (urlList != null) {
+      final messages = await widget.chatRepository
+          .sendImageMessage(message: messageText, images: urlList);
+      setState(() {
+        _currentMessages = messages;
+      });
+      if (!mounted) return;
+      context.read<ImageUploadCubit>().clearImages();
+    }
   }
 }
 
 class _ChatBody extends StatelessWidget {
   final Iterable<ChatMessageDto> messages;
+  final ScrollController controller;
 
   const _ChatBody({
     required this.messages,
     Key? key,
+    required this.controller,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      reverse: true,
+      controller: controller,
       itemCount: messages.length,
       itemBuilder: (_, index) {
         return _ChatMessage(chatData: messages.elementAt(index));
@@ -135,14 +176,16 @@ class _ChatTextField extends StatelessWidget {
   final ValueChanged<String> onSendLocationPressed;
   final ValueChanged<String> onSendImagePressed;
   final VoidCallback onGetLocationPressed;
+  final VoidCallback onPickImagePressed;
 
   final _textEditingController = TextEditingController();
 
   _ChatTextField({
     required this.onMessageSendPressed,
     required this.onSendLocationPressed,
-    required this.onSendImagePressed,
+    required this.onPickImagePressed,
     required this.onGetLocationPressed,
+    required this.onSendImagePressed,
     Key? key,
   }) : super(key: key);
 
@@ -152,7 +195,7 @@ class _ChatTextField extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return BlocBuilder<LocationCubit, LocationState>(
-      builder: (context, state) {
+      builder: (context, locationState) {
         return Material(
           color: colorScheme.surface,
           elevation: 12,
@@ -165,7 +208,33 @@ class _ChatTextField extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (state.position != null)
+                BlocBuilder<ImageUploadCubit, ImageUploadState>(
+                    builder: (context, uploadState) {
+                  final List<String?>? imageUrlList = uploadState.imageUrl;
+                  if (imageUrlList != null && imageUrlList.isNotEmpty) {
+                    return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 200,
+                                childAspectRatio: 3 / 2,
+                                crossAxisSpacing: 20,
+                                mainAxisSpacing: 20),
+                        itemCount: imageUrlList.length,
+                        itemBuilder: (BuildContext ctx, index) {
+                          final String? imageUrl = imageUrlList[index];
+                          if (imageUrl != null) {
+                            return Image.network(imageUrl);
+                          } else {
+                            return const SizedBox.shrink();
+                          }
+                        });
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                }),
+                if (locationState.position != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Container(
@@ -187,8 +256,7 @@ class _ChatTextField extends StatelessWidget {
                 Row(
                   children: [
                     IconButton(
-                        onPressed: () =>
-                            onSendImagePressed(_textEditingController.text),
+                        onPressed: () => onPickImagePressed(),
                         icon: const Icon(Icons.image)),
                     IconButton(
                         onPressed: () => onGetLocationPressed(),
@@ -210,8 +278,12 @@ class _ChatTextField extends StatelessWidget {
                     ),
                     IconButton(
                       onPressed: () {
-                        if (state.position != null) {
+                        final imageUrl =
+                            context.read<ImageUploadCubit>().state.imageUrl;
+                        if (locationState.position != null) {
                           onSendLocationPressed(_textEditingController.text);
+                        } else if (imageUrl != null && imageUrl.isNotEmpty) {
+                          onSendImagePressed(_textEditingController.text);
                         } else {
                           onMessageSendPressed(_textEditingController.text);
                         }
@@ -267,7 +339,10 @@ class _ChatMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Material(
+    return Bubble(
+      margin: const BubbleEdges.only(top: 10, right: 40),
+      alignment: Alignment.topLeft,
+      nip: BubbleNip.leftTop,
       color:
           chatData.chatUserDto is ChatUserLocalDto ? colorScheme.primary : null,
       child: Padding(

@@ -4,6 +4,9 @@ intl для даты
 
 geolocator настроен в android ios
 
+image picker настроен
+List?? на аплоадере
+
 
 <p align="center">
 <img src="https://surf.ru/wp-content/themes/surf/assets/img/logo.svg" height="120" />

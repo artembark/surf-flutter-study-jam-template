@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:surf_practice_chat_flutter/common/app_theme.dart';
 import 'package:surf_practice_chat_flutter/features/auth/screens/auth_screen.dart';
+import 'package:surf_practice_chat_flutter/features/image_upload/blocs/image_upload_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/location/blocs/location_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
 
@@ -38,6 +39,7 @@ class SurfChatApp extends StatelessWidget {
         BlocProvider(create: (_) => locator.get<AuthCubit>()),
         BlocProvider(create: (_) => locator.get<AppSettingsCubit>()),
         BlocProvider(create: (_) => locator.get<LocationCubit>()),
+        BlocProvider(create: (_) => locator.get<ImageUploadCubit>()),
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme,
