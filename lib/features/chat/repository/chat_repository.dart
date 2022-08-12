@@ -15,6 +15,8 @@ abstract class IChatRepository {
   /// Maximum length of one's message content,
   static const int maxMessageLength = 80;
 
+  void updateClient(String token) {}
+
   /// Returns messages [ChatMessageDto] from a source.
   ///
   /// Pay your attentions that there are two types of authors: [ChatUserDto]
@@ -76,14 +78,25 @@ abstract class IChatRepository {
   ///
   /// Throws an [Exception] when some error appears.
   Future<ChatUserDto> getUser(int userId);
+
+  /// Retrieves local user
+  ///
+  ///
+  /// Throws an [UserNotFoundException] if error.
+  Future<ChatUserDto> getLocalUser();
 }
 
 /// Simple implementation of [IChatRepository], using [StudyJamClient].
 class ChatRepository implements IChatRepository {
-  final StudyJamClient _studyJamClient;
+  StudyJamClient _studyJamClient;
 
   /// Constructor for [ChatRepository].
   ChatRepository(this._studyJamClient);
+
+  @override
+  void updateClient(String token) {
+    _studyJamClient = StudyJamClient().getAuthorizedClient(token);
+  }
 
   @override
   Future<Iterable<ChatMessageDto>> getMessages({required int chatId}) async {
@@ -138,6 +151,16 @@ class ChatRepository implements IChatRepository {
     final messages = await _fetchAllMessages(chatId: chatId);
 
     return messages;
+  }
+
+  @override
+  Future<ChatUserDto> getLocalUser() async {
+    final localUser = await _studyJamClient.getUser();
+    if (localUser == null) {
+      throw const UserNotFoundException(
+          'Error getting current user information.');
+    }
+    return ChatUserLocalDto.fromSJClient(localUser);
   }
 
   @override

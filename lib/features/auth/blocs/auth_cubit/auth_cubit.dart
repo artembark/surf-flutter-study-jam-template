@@ -3,7 +3,9 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
+import 'package:surf_study_jam/surf_study_jam.dart';
 
+import '../../../../di.dart';
 import '../../exceptions/auth_exception.dart';
 
 part 'auth_state.dart';
@@ -39,9 +41,9 @@ class AuthCubit extends Cubit<AuthState> {
       }
       emit(const AuthState(errorMessage: 'Неизвестная ошибка'));
     });
+  }
 
-    final TokenDto token =
-        await authRepository.signIn(login: login, password: password);
-    emit(AuthState(tokenDto: token));
+  void logOut() {
+    authRepository.signOut();
   }
 }

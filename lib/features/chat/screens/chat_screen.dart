@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:map_launcher/map_launcher.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:surf_practice_chat_flutter/common/app_const.dart';
+import 'package:surf_practice_chat_flutter/features/chat/blocs/chat_cubit/chat_cubit.dart';
 
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_geolocation_geolocation_dto.dart';
 import 'package:surf_practice_chat_flutter/features/chat/models/chat_message_dto.dart';
@@ -13,19 +15,18 @@ import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
 import 'package:surf_practice_chat_flutter/features/image_upload/blocs/image_upload_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/location/blocs/location_cubit.dart';
+import 'package:surf_practice_chat_flutter/features/topics/blocs/topics/topics_cubit.dart';
 import '../models/chat_message_location_dto.dart';
 
 /// Main screen of chat app, containing messages.
 class ChatScreen extends StatefulWidget {
   /// Repository for chat functionality.
-  final IChatRepository chatRepository;
-  final int chatId;
+  // final IChatRepository chatRepository;
+  // final int chatId;
 
   /// Constructor for [ChatScreen].
   const ChatScreen({
     Key? key,
-    required this.chatRepository,
-    required this.chatId,
   }) : super(key: key);
 
   @override
@@ -34,15 +35,16 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _nameEditingController = TextEditingController();
-  final ScrollController _controller = ScrollController();
   Iterable<ChatMessageDto> _currentMessages = [];
+  late final IChatRepository chatRepository;
+  late final int chatId;
 
-  void _scrollDown() {
-    _controller.animateTo(
-      _controller.position.maxScrollExtent,
-      duration: const Duration(seconds: 1),
-      curve: Curves.fastOutSlowIn,
-    );
+  @override
+  void initState() {
+    chatRepository = context.read<ChatCubit>().chatRepository;
+    chatId = context.read<TopicsCubit>().state.currentId ?? 1;
+    _onUpdatePressed();
+    super.initState();
   }
 
   @override
@@ -63,7 +65,6 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: _ChatBody(
-              controller: _controller,
               messages: _currentMessages,
             ),
           ),
@@ -76,25 +77,19 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
-      floatingActionButton: FloatingActionButton.small(
-        onPressed: _scrollDown,
-        child: const Icon(Icons.arrow_downward),
-      ),
     );
   }
 
   Future<void> _onUpdatePressed() async {
-    final messages =
-        await widget.chatRepository.getMessages(chatId: widget.chatId);
+    final messages = await chatRepository.getMessages(chatId: chatId);
     setState(() {
       _currentMessages = messages;
     });
   }
 
   Future<void> _onSendPressed(String messageText) async {
-    final messages = await widget.chatRepository
-        .sendMessage(message: messageText, chatId: widget.chatId);
+    final messages =
+        await chatRepository.sendMessage(message: messageText, chatId: chatId);
     setState(() {
       _currentMessages = messages;
     });
@@ -106,8 +101,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (latitude != null && longitude != null) {
       final location =
           ChatGeolocationDto(latitude: latitude, longitude: longitude);
-      final messages = await widget.chatRepository.sendGeolocationMessage(
-          message: messageText, location: location, chatId: widget.chatId);
+      final messages = await chatRepository.sendGeolocationMessage(
+          message: messageText, location: location, chatId: chatId);
 
       setState(() {
         _currentMessages = messages;
@@ -117,10 +112,12 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  //получение геопозиции
   void _onGetLocationPressed() async {
     context.read<LocationCubit>().getCurrentPosition();
   }
 
+  //выбор картинки
   Future<void> _onPickImagePressed() async {
     final ImagePicker picker = ImagePicker();
     final List<XFile>? images = await picker.pickMultiImage();
@@ -134,8 +131,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final List<String>? urlList =
         context.read<ImageUploadCubit>().state.imageUrl;
     if (urlList != null) {
-      final messages = await widget.chatRepository.sendImageMessage(
-          message: messageText, images: urlList, chatId: widget.chatId);
+      final messages = await chatRepository.sendImageMessage(
+          message: messageText, images: urlList, chatId: chatId);
       setState(() {
         _currentMessages = messages;
       });
@@ -145,25 +142,45 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-class _ChatBody extends StatelessWidget {
+class _ChatBody extends StatefulWidget {
   final Iterable<ChatMessageDto> messages;
-  final ScrollController controller;
 
   const _ChatBody({
     required this.messages,
     Key? key,
-    required this.controller,
   }) : super(key: key);
 
   @override
+  State<_ChatBody> createState() => _ChatBodyState();
+}
+
+class _ChatBodyState extends State<_ChatBody> {
+  final ScrollController controller = ScrollController();
+
+  void _scrollDown() {
+    controller.jumpTo(controller.position.maxScrollExtent);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      //reverse: true,
-      controller: controller,
-      itemCount: messages.length,
-      itemBuilder: (_, index) {
-        return _ChatMessage(chatData: messages.elementAt(index));
-      },
+    return Stack(
+      children: [
+        ListView.builder(
+          controller: controller,
+          itemCount: widget.messages.length,
+          itemBuilder: (_, index) {
+            return _ChatMessage(chatData: widget.messages.elementAt(index));
+          },
+        ),
+        Positioned(
+          bottom: 10,
+          right: 10,
+          child: FloatingActionButton(
+            onPressed: () => _scrollDown(),
+            child: const Icon(Icons.arrow_downward),
+          ),
+        )
+      ],
     );
   }
 }
@@ -312,15 +329,26 @@ class _ChatAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          IconButton(
-            onPressed: onUpdatePressed,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: () {
+          Navigator.pushNamed(context, AppConst.topicsRoute);
+        },
       ),
+      title: BlocBuilder<TopicsCubit, TopicsState>(
+        builder: (context, state) {
+          final String? chatName = state.chatName;
+          return (chatName != null)
+              ? Text(chatName)
+              : const Text('Без названия');
+        },
+      ),
+      actions: [
+        IconButton(
+          onPressed: onUpdatePressed,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
     );
   }
 }
@@ -372,6 +400,7 @@ class _ChatMessage extends StatelessWidget {
                     DateFormat("HH:mm").format(
                       chatData.createdDateTime.toLocal(),
                     ),
+                    textAlign: TextAlign.end,
                   ),
                 ],
               ),
@@ -403,7 +432,7 @@ class UserGeolocationButton extends StatelessWidget {
           title: '${chatData.chatUserDto.name ?? 'Пользователь без имени'} тут',
         );
       },
-      label: const Text('Открыть геолокацию на карте'),
+      label: const Text('Открыть на карте'),
     );
   }
 }
@@ -428,7 +457,6 @@ class UserMessageImages extends StatelessWidget {
             mainAxisSpacing: 20),
         itemCount: chatData.imageUrl?.length,
         itemBuilder: (BuildContext ctx, index) {
-          print(chatData.imageUrl![index]);
           return Image.network(chatData.imageUrl![index]);
         });
   }

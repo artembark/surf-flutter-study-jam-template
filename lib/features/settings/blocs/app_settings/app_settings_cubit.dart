@@ -21,7 +21,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
     //записываем в случае смены названия
     if (tokenDto != state.tokenDto) {
       //запись токена по ключу в хранилище, асинхронная
-      await sharedPreferences.setString(tokenKey, tokenDto.toString());
+      await sharedPreferences.setString(tokenKey, tokenDto.token);
       //выбрасывание обновленного состояние с новым токеном
       emit(state.copyWith(tokenDto: tokenDto));
     }
@@ -58,5 +58,13 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
     emit(state.copyWith(userName: userName));
     //возвращаемое значение
     return userName;
+  }
+
+  void resetToken() async {
+    //запись токена по ключу в хранилище, асинхронная
+
+    await sharedPreferences.setString(tokenKey, '');
+    //выбрасывание обновленного состояние с новым токеном
+    emit(state.copyWith(tokenDto: const TokenDto(token: '')));
   }
 }

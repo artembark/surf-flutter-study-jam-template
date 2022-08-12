@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
+import 'package:surf_practice_chat_flutter/common/app_const.dart';
 import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/image_upload/blocs/image_upload_cubit.dart';
-import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
+import 'package:surf_practice_chat_flutter/features/topics/blocs/topics/topics_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/topics/models/chat_topic_send_dto.dart';
-import 'package:surf_study_jam/surf_study_jam.dart';
 
 import '../models/chat_topic_dto.dart';
-import '../repository/chart_topics_repository.dart';
 
 /// Screen, that is used for creating new chat topics.
 class CreateTopicScreen extends StatefulWidget {
-  final IChatTopicsRepository chatTopicsRepository;
-
-  /// Constructor for [TopicsScreen].
-  const CreateTopicScreen({Key? key, required this.chatTopicsRepository})
-      : super(key: key);
+  /// Constructor for [CreateTopicScreen].
+  const CreateTopicScreen({
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<CreateTopicScreen> createState() => _CreateTopicScreenState();
@@ -96,9 +93,7 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
               ),
               BlocBuilder<ImageUploadCubit, ImageUploadState>(
                 builder: (context, state) {
-                  print('before');
                   final String? imageUrl = state.imageUrl?.first;
-                  print('after');
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -127,7 +122,7 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
                           name: topicName, description: topicDescription);
                     }
                   },
-                  child: Text('Создать'))
+                  child: const Text('Создать'))
             ],
           ),
         ),
@@ -140,10 +135,15 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
     final BuildContext currentContext = context;
     final String? avatar =
         context.read<ImageUploadCubit>().state.imageUrl?.first;
-    final ChatTopicDto newTopic = await widget.chatTopicsRepository.createTopic(
-        ChatTopicSendDto(name: name, description: description, avatar: avatar));
+
+    final ChatTopicDto newTopic = await context
+        .read<TopicsCubit>()
+        .chatTopicsRepository
+        .createTopic(ChatTopicSendDto(
+            name: name, description: description, avatar: avatar));
     currentContext.read<ImageUploadCubit>().clearImages();
-    _pushToChat(context: context, chatId: newTopic.id);
+    _pushToChat(
+        context: context, chatId: newTopic.id, chatName: newTopic.name!);
   }
 
   Future<void> _onPickImagePressed() async {
@@ -155,22 +155,12 @@ class _CreateTopicScreenState extends State<CreateTopicScreen> {
     }
   }
 
-  void _pushToChat({required BuildContext context, required int chatId}) {
-    Navigator.push<ChatScreen>(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          final String? token =
-              context.read<AppSettingsCubit>().state.tokenDto?.token;
-          return ChatScreen(
-            chatRepository: ChatRepository(
-              StudyJamClient().getAuthorizedClient(token ?? ''),
-            ),
-            chatId: chatId,
-          );
-        },
-      ),
-    );
+  void _pushToChat(
+      {required BuildContext context,
+      required int chatId,
+      required String chatName}) {
+    context.read<TopicsCubit>().updateTopic(chatId, chatName);
+    Navigator.pushNamed(context, AppConst.chatRoute);
   }
 }
 
@@ -182,6 +172,12 @@ class _ChatAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
       title: Column(
         children: const [
           Text('Создать новую тему'),

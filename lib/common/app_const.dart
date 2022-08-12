@@ -13,4 +13,10 @@ abstract class AppConst {
   static const String freeImageUploadPath = '/api/1/upload';
   static const String freeImageApiKeyKeyName = 'key';
   static const String freeImageBodyImageKey = 'image';
+
+  //константы маршрутов
+  static const String loginRoute = '/';
+  static const String topicsRoute = '/topics';
+  static const String createTopicsRoute = '/topics/createTopic';
+  static const String chatRoute = '/chat';
 }

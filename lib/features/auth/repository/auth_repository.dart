@@ -41,7 +41,6 @@ class AuthRepository implements IAuthRepository {
   }) async {
     try {
       final token = await _studyJamClient.signin(login, password);
-
       return TokenDto(token: token);
     } on Exception catch (e) {
       throw AuthException(e.toString());

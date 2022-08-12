@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:surf_practice_chat_flutter/common/app_const.dart';
 import 'package:surf_practice_chat_flutter/features/auth/blocs/auth_cubit/auth_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
+import 'package:surf_practice_chat_flutter/features/chat/blocs/chat_cubit/chat_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
-import 'package:surf_study_jam/surf_study_jam.dart';
+import 'package:surf_practice_chat_flutter/features/topics/blocs/topics/topics_cubit.dart';
 
-import '../../topics/repository/chart_topics_repository.dart';
 import '../../topics/screens/topics_screen.dart';
 
 /// Screen for authorization process.
@@ -44,8 +45,13 @@ class _AuthScreenState extends State<AuthScreen> {
       listener: (context, state) {
         final TokenDto? token = state.tokenDto;
         if (token != null) {
+          context
+              .read<TopicsCubit>()
+              .chatTopicsRepository
+              .updateClient(token.token);
+          context.read<ChatCubit>().chatRepository.updateClient(token.token);
           context.read<AppSettingsCubit>().saveToken(token);
-          _pushToTopics(context, token);
+          Navigator.pushNamed(context, AppConst.topicsRoute);
         }
         final String? errorMessage = state.errorMessage;
         if (errorMessage != null) {
@@ -143,21 +149,6 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         );
       },
-    );
-  }
-
-  void _pushToTopics(BuildContext context, TokenDto token) {
-    Navigator.push<ChatScreen>(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          return TopicsScreen(
-            chatTopicsRepository: ChatTopicsRepository(
-              StudyJamClient().getAuthorizedClient(token.token),
-            ),
-          );
-        },
-      ),
     );
   }
 }

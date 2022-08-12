@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
-import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
+import 'package:surf_practice_chat_flutter/common/app_const.dart';
+import 'package:surf_practice_chat_flutter/features/auth/blocs/auth_cubit/auth_cubit.dart';
+import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
+import 'package:surf_practice_chat_flutter/features/chat/blocs/chat_cubit/chat_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
-import 'package:surf_study_jam/surf_study_jam.dart';
+import 'package:surf_practice_chat_flutter/features/topics/blocs/topics/topics_cubit.dart';
 
 import '../models/chat_topic_dto.dart';
-import '../repository/chart_topics_repository.dart';
 import 'create_topic_screen.dart';
 
 /// Screen with different chat topics to go to.
 class TopicsScreen extends StatefulWidget {
-  final IChatTopicsRepository chatTopicsRepository;
-
   /// Constructor for [TopicsScreen].
-  const TopicsScreen({Key? key, required this.chatTopicsRepository})
-      : super(key: key);
+  const TopicsScreen({
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<TopicsScreen> createState() => _TopicsScreenState();
@@ -25,6 +25,13 @@ class TopicsScreen extends StatefulWidget {
 class _TopicsScreenState extends State<TopicsScreen> {
   Iterable<ChatTopicDto> _currentTopics = [];
   final _nameEditingController = TextEditingController();
+
+  @override
+  void initState() {
+    context.read<ChatCubit>().getUserName();
+    _onUpdatePressed();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,35 +55,20 @@ class _TopicsScreenState extends State<TopicsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.small(
-        onPressed: () => _pushToCreateTopic(
-          context: context,
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () =>
+            Navigator.pushNamed(context, AppConst.createTopicsRoute),
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  void _pushToCreateTopic({required BuildContext context}) {
-    Navigator.push<ChatScreen>(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          final String? token =
-              context.read<AppSettingsCubit>().state.tokenDto?.token;
-          return CreateTopicScreen(
-            chatTopicsRepository: ChatTopicsRepository(
-              StudyJamClient().getAuthorizedClient(token ?? ''),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Future<void> _onUpdatePressed() async {
-    final topics = await widget.chatTopicsRepository.getTopics(
-        topicsStartDate: DateTime.now().subtract(const Duration(days: 2)));
+    final topics = await context
+        .read<TopicsCubit>()
+        .chatTopicsRepository
+        .getTopics(
+            topicsStartDate: DateTime.now().subtract(const Duration(days: 10)));
     setState(() {
       _currentTopics = topics;
     });
@@ -96,17 +88,33 @@ class _ChatAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: () {
+          context.read<AuthCubit>().logOut();
+          context.read<AppSettingsCubit>().resetToken();
+          Navigator.pop(context);
+        },
+      ),
       actions: [
         IconButton(
           onPressed: onUpdatePressed,
           icon: const Icon(Icons.refresh),
         ),
       ],
-      title: Column(
-        children: [
-          Text('Списки чатов'),
-          FittedBox(child: Text('Пользователь UserName'))
-        ],
+      title: BlocBuilder<ChatCubit, ChatState>(
+        builder: (context, state) {
+          final String? userName = state.userName;
+          return Column(
+            children: [
+              const Text('Списки чатов'),
+              if (userName != null)
+                FittedBox(
+                  child: Text('Пользователь $userName'),
+                )
+            ],
+          );
+        },
       ),
     );
   }
@@ -122,10 +130,15 @@ class _TopicsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return ListView.separated(
       itemCount: topics.length,
       itemBuilder: (_, index) {
         return _TopicItem(topicData: topics.elementAt(index));
+      },
+      separatorBuilder: (BuildContext context, int index) {
+        return const Divider(
+          height: 2,
+        );
       },
     );
   }
@@ -141,9 +154,9 @@ class _TopicItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
-      onTap: () => _pushToChat(context: context, chatId: topicData.id),
+      onTap: () => _pushToChat(
+          context: context, chatId: topicData.id, chatName: topicData.name!),
       child: Material(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -177,22 +190,12 @@ class _TopicItem extends StatelessWidget {
     );
   }
 
-  void _pushToChat({required BuildContext context, required int chatId}) {
-    Navigator.push<ChatScreen>(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          final String? token =
-              context.read<AppSettingsCubit>().state.tokenDto?.token;
-          return ChatScreen(
-            chatRepository: ChatRepository(
-              StudyJamClient().getAuthorizedClient(token ?? ''),
-            ),
-            chatId: chatId,
-          );
-        },
-      ),
-    );
+  void _pushToChat(
+      {required BuildContext context,
+      required int chatId,
+      required String chatName}) {
+    context.read<TopicsCubit>().updateTopic(chatId, chatName);
+    Navigator.pushNamed(context, AppConst.chatRoute);
   }
 }
 

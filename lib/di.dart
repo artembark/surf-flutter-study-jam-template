@@ -11,6 +11,8 @@ import 'package:surf_practice_chat_flutter/features/location/blocs/location_cubi
 import 'package:surf_practice_chat_flutter/features/location/datasource/geolocator_data_source.dart';
 import 'package:surf_practice_chat_flutter/features/location/repository/geolocation_repository.dart';
 import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
+import 'package:surf_practice_chat_flutter/features/topics/blocs/topics/topics_cubit.dart';
+import 'package:surf_practice_chat_flutter/features/topics/repository/chart_topics_repository.dart';
 import 'package:surf_study_jam/surf_study_jam.dart';
 
 import 'features/chat/blocs/chat_cubit/chat_cubit.dart';
@@ -19,10 +21,18 @@ final GetIt locator = GetIt.instance;
 
 ///Конфигурирование зависимостей
 Future<void> initializeDependencies() async {
+  //для сохранения в настройки
+  final sharedPreferences = await SharedPreferences.getInstance();
+  locator.registerLazySingleton(() => sharedPreferences);
+
   //Bloc/Cubit
   //Кубит состояния авторизации
   locator.registerFactory(
     () => AuthCubit(authRepository: locator()),
+  );
+  //Кубит тем
+  locator.registerFactory(
+    () => TopicsCubit(chatTopicsRepository: locator()),
   );
   //Кубит состояния чата
   locator.registerFactory(
@@ -41,7 +51,15 @@ Future<void> initializeDependencies() async {
     () => AppSettingsCubit(sharedPreferences: locator()),
   );
 
-  final StudyJamClient studyJamClient = StudyJamClient();
+  //тут бы по-другому)
+  final String token = sharedPreferences.getString('token') ?? '';
+  StudyJamClient studyJamClient = StudyJamClient();
+  if (token.isNotEmpty) {
+    studyJamClient = StudyJamClient().getAuthorizedClient(token);
+    await studyJamClient.getUser().then((value) {}).catchError((error) {
+      sharedPreferences.setString('token', '');
+    });
+  }
 
   //Репозитории
   //Репозиторий авторизации
@@ -52,6 +70,11 @@ Future<void> initializeDependencies() async {
   locator.registerLazySingleton<IChatRepository>(
     () => ChatRepository(studyJamClient),
   );
+  //Репозиторий тем
+  locator.registerLazySingleton<IChatTopicsRepository>(
+    () => ChatTopicsRepository(studyJamClient),
+  );
+
   //Репозиторий геолокации
   locator.registerLazySingleton<GeolocationRepository>(
     () => GeolocationRepositoryImpl(locationDataSource: locator()),
@@ -73,8 +96,4 @@ Future<void> initializeDependencies() async {
   //Внешние зависимости
   //http-клиент для запросов
   locator.registerLazySingleton(() => http.Client());
-
-  //для сохранения в настройки
-  final sharedPreferences = await SharedPreferences.getInstance();
-  locator.registerLazySingleton(() => sharedPreferences);
 }

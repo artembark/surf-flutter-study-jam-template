@@ -14,30 +14,16 @@ class ImageUploadCubit extends Cubit<ImageUploadState> {
   ImageUploadCubit({required this.imageUploadRepository})
       : super(const ImageUploadState());
 
-  // void uploadImage(List<XFile> imageFileList) async {
-  //   emit(const ImageUploadState(uploading: true));
-  //   List<String?>? uploadedImageList = [];
-  //   await Future.forEach(imageFileList, (XFile imageFile) async {
-  //     String imageUrl =
-  //         await imageUploadRepository.getImageUrl(File(imageFile.path));
-  //     uploadedImageList.add(imageUrl);
-  //     emit(ImageUploadState(imageUrl: uploadedImageList));
-  //   });
-  //   emit(state.copyWith(uploading: false));
-  // }
-
   void uploadImage(List<XFile> imageFileList) async {
     emit(const ImageUploadState(uploading: true));
     List<String>? uploadedImageList = [];
     await Future.forEach(imageFileList, (XFile imageFile) async {
-      //await for (XFile imageFile in Stream.fromIterable(imageFileList)) {
-      print('проход ${imageFile.path}');
       await imageUploadRepository
           .getImageUrl(File(imageFile.path))
           .then((imageUrl) {
         uploadedImageList.add(imageUrl);
         emit(ImageUploadState(imageUrl: uploadedImageList));
-      }) //обработка ошибки геолокации
+      }) //обработка ошибки
           //можно через test поймать нужный тип и выбросить стейт в UI
           .catchError((Object error, StackTrace stackTrace) {
         if (kDebugMode) {
@@ -54,3 +40,16 @@ class ImageUploadCubit extends Cubit<ImageUploadState> {
     emit(const ImageUploadState(imageUrl: null));
   }
 }
+
+//альтернатива
+// void uploadImage(List<XFile> imageFileList) async {
+//   emit(const ImageUploadState(uploading: true));
+//   List<String?>? uploadedImageList = [];
+//   await Future.forEach(imageFileList, (XFile imageFile) async {
+//     String imageUrl =
+//         await imageUploadRepository.getImageUrl(File(imageFile.path));
+//     uploadedImageList.add(imageUrl);
+//     emit(ImageUploadState(imageUrl: uploadedImageList));
+//   });
+//   emit(state.copyWith(uploading: false));
+// }
