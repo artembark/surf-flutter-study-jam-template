@@ -51,6 +51,6 @@ class ImageUploadCubit extends Cubit<ImageUploadState> {
   }
 
   void clearImages() {
-    emit(const ImageUploadState(imageUrl: []));
+    emit(const ImageUploadState(imageUrl: null));
   }
 }

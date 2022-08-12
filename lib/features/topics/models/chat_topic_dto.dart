@@ -19,20 +19,28 @@ class ChatTopicDto {
   /// Should be less than 1024 characters long.
   final String? description;
 
+  /// Topic's avatar link.
+  ///
+  final String? avatar;
+
+  /// Topic's owner.
+  ///
+  final int? owner;
+
   /// Constructor for [ChatTopicDto].
-  const ChatTopicDto({
-    required this.id,
-    this.name,
-    this.description,
-  });
+  const ChatTopicDto(
+      {required this.id, this.name, this.description, this.avatar, this.owner});
 
   /// Named constructor for converting DTO from [StudyJamClient].
   ChatTopicDto.fromSJClient({
     required SjChatDto sjChatDto,
   })  : id = sjChatDto.id,
         name = sjChatDto.name,
-        description = sjChatDto.description;
+        description = sjChatDto.description,
+        avatar = sjChatDto.avatar,
+        owner = sjChatDto.owner;
 
   @override
-  String toString() => 'ChatTopicDto(id: $id, name: $name, description: $description)';
+  String toString() =>
+      'ChatTopicDto(id: $id, name: $name, description: $description)';
 }

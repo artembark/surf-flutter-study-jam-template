@@ -9,8 +9,4 @@ class ChatCubit extends Cubit<ChatState> {
   final IChatRepository chatRepository;
 
   ChatCubit({required this.chatRepository}) : super(ChatState());
-
-  void init() {
-    //chatRepository.getAuthorizedClient(token.token);
-  }
 }

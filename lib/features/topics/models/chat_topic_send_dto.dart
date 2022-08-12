@@ -17,18 +17,23 @@ class ChatTopicSendDto {
   /// Should be less than 1024 characters long.
   final String? description;
 
+  /// Topic's avatar.
+  ///
+  /// Should be less than 1024 characters long.
+  final String? avatar;
+
   /// Constructor for [ChatTopicDto].
   const ChatTopicSendDto({
     this.name,
     this.description,
+    this.avatar,
   });
 
   /// Transforms from [ChatTopicSendDto] to API model [SjChatSendsDto].
-  SjChatSendsDto toSjChatSendsDto() => SjChatSendsDto(
-        name: name,
-        description: description,
-      );
+  SjChatSendsDto toSjChatSendsDto() =>
+      SjChatSendsDto(name: name, description: description, avatar: avatar);
 
   @override
-  String toString() => 'ChatTopicSendDto(name: $name, description: $description)';
+  String toString() =>
+      'ChatTopicSendDto(name: $name, description: $description,avatar: $avatar)';
 }

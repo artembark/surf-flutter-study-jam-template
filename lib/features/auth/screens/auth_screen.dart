@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:surf_practice_chat_flutter/features/auth/blocs/auth_cubit/auth_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
-import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
 import 'package:surf_study_jam/surf_study_jam.dart';
+
+import '../../topics/repository/chart_topics_repository.dart';
+import '../../topics/screens/topics_screen.dart';
 
 /// Screen for authorization process.
 ///
@@ -43,7 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
         final TokenDto? token = state.tokenDto;
         if (token != null) {
           context.read<AppSettingsCubit>().saveToken(token);
-          _pushToChat(context, token);
+          _pushToTopics(context, token);
         }
         final String? errorMessage = state.errorMessage;
         if (errorMessage != null) {
@@ -54,7 +56,12 @@ class _AuthScreenState extends State<AuthScreen> {
                   Icons.dangerous_rounded,
                   color: Colors.red,
                 ),
-                Text(errorMessage),
+                Expanded(
+                  child: Text(
+                    errorMessage,
+                    maxLines: 2,
+                  ),
+                ),
               ],
             ),
           ));
@@ -139,13 +146,13 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  void _pushToChat(BuildContext context, TokenDto token) {
+  void _pushToTopics(BuildContext context, TokenDto token) {
     Navigator.push<ChatScreen>(
       context,
       MaterialPageRoute(
         builder: (_) {
-          return ChatScreen(
-            chatRepository: ChatRepository(
+          return TopicsScreen(
+            chatTopicsRepository: ChatTopicsRepository(
               StudyJamClient().getAuthorizedClient(token.token),
             ),
           );

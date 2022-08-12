@@ -13,18 +13,19 @@ import 'package:surf_practice_chat_flutter/features/chat/models/chat_user_local_
 import 'package:surf_practice_chat_flutter/features/chat/repository/chat_repository.dart';
 import 'package:surf_practice_chat_flutter/features/image_upload/blocs/image_upload_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/location/blocs/location_cubit.dart';
-
 import '../models/chat_message_location_dto.dart';
 
 /// Main screen of chat app, containing messages.
 class ChatScreen extends StatefulWidget {
   /// Repository for chat functionality.
   final IChatRepository chatRepository;
+  final int chatId;
 
   /// Constructor for [ChatScreen].
   const ChatScreen({
-    required this.chatRepository,
     Key? key,
+    required this.chatRepository,
+    required this.chatId,
   }) : super(key: key);
 
   @override
@@ -78,20 +79,22 @@ class _ChatScreenState extends State<ChatScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
       floatingActionButton: FloatingActionButton.small(
         onPressed: _scrollDown,
-        child: Icon(Icons.arrow_downward),
+        child: const Icon(Icons.arrow_downward),
       ),
     );
   }
 
   Future<void> _onUpdatePressed() async {
-    final messages = await widget.chatRepository.getMessages();
+    final messages =
+        await widget.chatRepository.getMessages(chatId: widget.chatId);
     setState(() {
       _currentMessages = messages;
     });
   }
 
   Future<void> _onSendPressed(String messageText) async {
-    final messages = await widget.chatRepository.sendMessage(messageText);
+    final messages = await widget.chatRepository
+        .sendMessage(message: messageText, chatId: widget.chatId);
     setState(() {
       _currentMessages = messages;
     });
@@ -103,8 +106,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (latitude != null && longitude != null) {
       final location =
           ChatGeolocationDto(latitude: latitude, longitude: longitude);
-      final messages = await widget.chatRepository
-          .sendGeolocationMessage(message: messageText, location: location);
+      final messages = await widget.chatRepository.sendGeolocationMessage(
+          message: messageText, location: location, chatId: widget.chatId);
 
       setState(() {
         _currentMessages = messages;
@@ -130,15 +133,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _onSendImagePressed(String messageText) async {
     final List<String>? urlList =
         context.read<ImageUploadCubit>().state.imageUrl;
-    // if (urlList != null) {
-    //   print(urlList);
-    //   urlList.forEach((element) {
-    //     print(element);
-    //   });
-    //   print(messageText);
     if (urlList != null) {
-      final messages = await widget.chatRepository
-          .sendImageMessage(message: messageText, images: urlList);
+      final messages = await widget.chatRepository.sendImageMessage(
+          message: messageText, images: urlList, chatId: widget.chatId);
       setState(() {
         _currentMessages = messages;
       });
@@ -353,7 +350,7 @@ class _ChatMessage extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //_ChatAvatar(userData: chatData.chatUserDto),
+            _ChatAvatar(userData: chatData.chatUserDto),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -450,7 +447,6 @@ class _ChatAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return SizedBox(
       width: _size,
       height: _size,
@@ -459,9 +455,7 @@ class _ChatAvatar extends StatelessWidget {
         shape: const CircleBorder(),
         child: Center(
           child: Text(
-            userData.name != null
-                ? '${userData.name!.split(' ').first[0]}${userData.name!.split(' ').last[0]}'
-                : '',
+            _generateAvatarLabel(userData.name),
             style: TextStyle(
               color: colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
@@ -471,5 +465,17 @@ class _ChatAvatar extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _generateAvatarLabel(String? userName) {
+    if (userName != null) {
+      List<String> userNameWords = userName.split(' ');
+      List<String> avatarSymbols = [];
+      for (String word in userNameWords) {
+        avatarSymbols.add(word[0]);
+      }
+      return avatarSymbols.join();
+    }
+    return '??';
   }
 }

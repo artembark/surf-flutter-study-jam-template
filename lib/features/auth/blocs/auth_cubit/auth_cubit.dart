@@ -14,6 +14,12 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit({required this.authRepository}) : super(const AuthState());
 
   void login(String login, String password) async {
+    if (login.isEmpty || password.isEmpty) {
+      emit(const AuthState(
+          errorMessage: 'Поля логин и пароль не могут быть пустыми'));
+      return;
+    }
+
     emit(const AuthState(loading: true));
     await authRepository
         .signIn(login: login, password: password)

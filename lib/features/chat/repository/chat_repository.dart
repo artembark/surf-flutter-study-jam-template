@@ -22,7 +22,7 @@ abstract class IChatRepository {
   /// the same name that you specified in [sendMessage].
   ///
   /// Throws an [Exception] when some error appears.
-  Future<Iterable<ChatMessageDto>> getMessages();
+  Future<Iterable<ChatMessageDto>> getMessages({required int chatId});
 
   /// Sends the message by with [message] content.
   ///
@@ -32,7 +32,8 @@ abstract class IChatRepository {
   ///
   /// [message] mustn't be empty and longer than [maxMessageLength]. Throws an
   /// [InvalidMessageException].
-  Future<Iterable<ChatMessageDto>> sendMessage(String message);
+  Future<Iterable<ChatMessageDto>> sendMessage(
+      {required String message, required int chatId});
 
   /// Sends the message by [location] contents. [message] is optional.
   ///
@@ -48,6 +49,7 @@ abstract class IChatRepository {
   Future<Iterable<ChatMessageDto>> sendGeolocationMessage({
     required ChatGeolocationDto location,
     String? message,
+    required int chatId,
   });
 
   /// Sends the message by [images] contents. [message] is optional.
@@ -64,6 +66,7 @@ abstract class IChatRepository {
   Future<Iterable<ChatMessageDto>> sendImageMessage({
     required List<String> images,
     String? message,
+    required int chatId,
   });
 
   /// Retrieves chat's user via his [userId].
@@ -83,20 +86,22 @@ class ChatRepository implements IChatRepository {
   ChatRepository(this._studyJamClient);
 
   @override
-  Future<Iterable<ChatMessageDto>> getMessages() async {
-    final messages = await _fetchAllMessages();
+  Future<Iterable<ChatMessageDto>> getMessages({required int chatId}) async {
+    final messages = await _fetchAllMessages(chatId: chatId);
 
     return messages;
   }
 
   @override
-  Future<Iterable<ChatMessageDto>> sendMessage(String message) async {
+  Future<Iterable<ChatMessageDto>> sendMessage(
+      {required String message, required int chatId}) async {
     if (message.length > IChatRepository.maxMessageLength) {
       throw InvalidMessageException('Message "$message" is too large.');
     }
-    await _studyJamClient.sendMessage(SjMessageSendsDto(text: message));
+    await _studyJamClient
+        .sendMessage(SjMessageSendsDto(text: message, chatId: chatId));
 
-    final messages = await _fetchAllMessages();
+    final messages = await _fetchAllMessages(chatId: chatId);
 
     return messages;
   }
@@ -105,16 +110,15 @@ class ChatRepository implements IChatRepository {
   Future<Iterable<ChatMessageDto>> sendGeolocationMessage({
     required ChatGeolocationDto location,
     String? message,
+    required int chatId,
   }) async {
     if (message != null && message.length > IChatRepository.maxMessageLength) {
       throw InvalidMessageException('Message "$message" is too large.');
     }
     await _studyJamClient.sendMessage(SjMessageSendsDto(
-      text: message,
-      geopoint: location.toGeopoint(),
-    ));
+        text: message, geopoint: location.toGeopoint(), chatId: chatId));
 
-    final messages = await _fetchAllMessages();
+    final messages = await _fetchAllMessages(chatId: chatId);
 
     return messages;
   }
@@ -123,16 +127,15 @@ class ChatRepository implements IChatRepository {
   Future<Iterable<ChatMessageDto>> sendImageMessage({
     required List<String> images,
     String? message,
+    required int chatId,
   }) async {
     if (message != null && message.length > IChatRepository.maxMessageLength) {
       throw InvalidMessageException('Message "$message" is too large.');
     }
-    await _studyJamClient.sendMessage(SjMessageSendsDto(
-      text: message,
-      images: images,
-    ));
+    await _studyJamClient.sendMessage(
+        SjMessageSendsDto(text: message, images: images, chatId: chatId));
 
-    final messages = await _fetchAllMessages();
+    final messages = await _fetchAllMessages(chatId: chatId);
 
     return messages;
   }
@@ -149,7 +152,8 @@ class ChatRepository implements IChatRepository {
         : ChatUserDto.fromSJClient(user);
   }
 
-  Future<Iterable<ChatMessageDto>> _fetchAllMessages() async {
+  Future<Iterable<ChatMessageDto>> _fetchAllMessages(
+      {required int chatId}) async {
     final messages = <SjMessageDto>[];
 
     var isLimitBroken = false;
@@ -161,7 +165,7 @@ class ChatRepository implements IChatRepository {
     // we're doing it in cycle.
     while (!isLimitBroken) {
       final batch = await _studyJamClient.getMessages(
-          lastMessageId: lastMessageId, limit: 10000);
+          chatId: chatId, lastMessageId: lastMessageId, limit: 10000);
       messages.addAll(batch);
       lastMessageId = batch.last.chatId;
       if (batch.length < 10000) {

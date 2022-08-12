@@ -11,7 +11,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  surf_study_jam: ^0.1.0+1
+  surf_study_jam: ^0.2.0+1
   cupertino_icons: ^1.0.5
 
   equatable: ^2.0.3

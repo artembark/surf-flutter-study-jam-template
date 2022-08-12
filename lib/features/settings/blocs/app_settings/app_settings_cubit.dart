@@ -10,6 +10,8 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
   //объект доступа к хранилищу sharedPreferences передается зависимостью
   final SharedPreferences sharedPreferences;
   final String tokenKey = 'token';
+  final String userNameKey = 'userName';
+
   //конструктор с обязательным именованым параметром объекта доступа к хранилищу
   AppSettingsCubit({required this.sharedPreferences})
       : super(const AppSettingsState());
@@ -21,7 +23,7 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
       //запись токена по ключу в хранилище, асинхронная
       await sharedPreferences.setString(tokenKey, tokenDto.toString());
       //выбрасывание обновленного состояние с новым токеном
-      emit(AppSettingsState(tokenDto: tokenDto));
+      emit(state.copyWith(tokenDto: tokenDto));
     }
   }
 
@@ -31,8 +33,30 @@ class AppSettingsCubit extends Cubit<AppSettingsState> {
     //в случае отсутствия ключа считывается пустая строка
     final String token = sharedPreferences.getString(tokenKey) ?? '';
     //выбрасывание обновленного состояние с полученным названием токена
-    emit(AppSettingsState(tokenDto: TokenDto(token: token)));
+    emit(state.copyWith(tokenDto: TokenDto(token: token)));
     //возвращаемое значение
     return token;
+  }
+
+  //метод сохранения имени пользователя в хранилище
+  Future<void> saveUserName(String userName) async {
+    //записываем в случае смены названия
+    if (userName != state.userName) {
+      //запись токена по ключу в хранилище, асинхронная
+      await sharedPreferences.setString(userNameKey, userName);
+      //выбрасывание обновленного состояние с новым токеном
+      emit(state.copyWith(userName: userName));
+    }
+  }
+
+  //метод получения сохраненного имени пользователя из хранилища
+  String getUserName() {
+    //чтение токена из хранилища по ключу
+    //в случае отсутствия ключа считывается пустая строка
+    final String userName = sharedPreferences.getString(userNameKey) ?? '';
+    //выбрасывание обновленного состояние с полученным названием токена
+    emit(state.copyWith(userName: userName));
+    //возвращаемое значение
+    return userName;
   }
 }
