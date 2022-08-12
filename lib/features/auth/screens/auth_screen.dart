@@ -5,11 +5,8 @@ import 'package:surf_practice_chat_flutter/features/auth/blocs/auth_cubit/auth_c
 import 'package:surf_practice_chat_flutter/features/auth/models/token_dto.dart';
 import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/blocs/chat_cubit/chat_cubit.dart';
-import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/topics/blocs/topics/topics_cubit.dart';
-
-import '../../topics/screens/topics_screen.dart';
 
 /// Screen for authorization process.
 ///
@@ -34,8 +31,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   void initState() {
-    loginController.text = 'artembark';
-    passController.text = 'hpE0xR7aDItA';
     super.initState();
   }
 

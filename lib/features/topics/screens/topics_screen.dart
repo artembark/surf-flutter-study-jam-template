@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:surf_practice_chat_flutter/common/app_const.dart';
 import 'package:surf_practice_chat_flutter/features/auth/blocs/auth_cubit/auth_cubit.dart';
-import 'package:surf_practice_chat_flutter/features/auth/repository/auth_repository.dart';
 import 'package:surf_practice_chat_flutter/features/chat/blocs/chat_cubit/chat_cubit.dart';
-import 'package:surf_practice_chat_flutter/features/chat/screens/chat_screen.dart';
 import 'package:surf_practice_chat_flutter/features/settings/blocs/app_settings/app_settings_cubit.dart';
 import 'package:surf_practice_chat_flutter/features/topics/blocs/topics/topics_cubit.dart';
 
