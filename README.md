@@ -1,13 +1,6 @@
+Описание итогового приложения находится в папке docs
+
 # Flutter Study Jam 2
-цвета
-intl для даты
-
-geolocator настроен в android ios
-
-image picker настроен
-List?? на аплоадере
-добавлены id
-имя владельца чата
 
 <p align="center">
 <img src="https://surf.ru/wp-content/themes/surf/assets/img/logo.svg" height="120" />
