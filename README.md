@@ -1,3 +1,7 @@
+# Итоговый проект в ветке `day-1`
+
+[Описание итогового приложения находится в папке docs ветки day-1](https://github.com/artembark/surf-flutter-study-jam-template/blob/day-1/docs/results/RESULT.md)
+
 # Flutter Study Jam 2
 
 <p align="center">
